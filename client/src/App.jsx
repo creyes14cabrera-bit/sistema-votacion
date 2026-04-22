@@ -8,7 +8,7 @@ function Header() {
   return (
     <header>
       <div className="header-logo">
-        <img src="https://via.placeholder.com/150x60?text=Alcaldía+Soledad" alt="Alcaldía de Soledad" />
+        <img src="logo Alcaldia.png" alt="Alcaldía de Soledad" />
       </div>
       <nav>
         <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Votación</Link>
@@ -32,7 +32,7 @@ function App() {
         </Routes>
       </main>
       <footer>
-        <img src="https://via.placeholder.com/120x40?text=Alcaldía" alt="Alcaldía de Soledad" />
+        <img src="logo Alcaldia.pnj" alt="Alcaldía de Soledad" />
         <div className="motto">“Compromiso con la participación ciudadana”</div>
         <p>© 2026 Alcaldía de Soledad - Sistema de Votación Institucional</p>
         <hr />
