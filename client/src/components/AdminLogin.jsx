@@ -34,43 +34,62 @@ function AdminLogin() {
     };
 
     return (
-        <div className="container mx-auto p-4">
-            <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-                <h1 className="text-2xl font-bold text-center mb-6">Panel de Administrador</h1>
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                    </div>
-                )}
+        <div className="section">
+            <div className="section-header">
+                <div className="section-tag">Acceso restringido</div>
+                <h1 className="section-title">Panel de <em>Administrador</em></h1>
+            </div>
+            <div className="card" style={{ maxWidth: '500px', margin: '0 auto' }}>
+                {error && <div className="pill pill-red" style={{ marginBottom: '20px' }}>{error}</div>}
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
-                            Usuario
-                        </label>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Usuario</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border)',
+                                background: 'rgba(0,0,0,0.3)',
+                                color: '#fff'
+                            }}
                             required
                         />
                     </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
-                            Contraseña
-                        </label>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Contraseña</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border)',
+                                background: 'rgba(0,0,0,0.3)',
+                                color: '#fff'
+                            }}
                             required
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+                        style={{
+                            background: 'linear-gradient(135deg, var(--gold), var(--gold2))',
+                            color: '#0a1628',
+                            border: 'none',
+                            padding: '12px 24px',
+                            borderRadius: '40px',
+                            fontSize: '1rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            width: '100%'
+                        }}
                     >
                         {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </button>

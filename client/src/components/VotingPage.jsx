@@ -67,35 +67,55 @@ function VotingPage() {
     };
 
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold text-center mb-8">Sistema de Votación</h1>
+        <div className="section">
+            <div className="section-header">
+                <div className="section-tag">Sufragio electrónico</div>
+                <h1 className="section-title">Sistema de <em>Votación</em></h1>
+            </div>
 
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {error}
-                </div>
-            )}
+            {error && <div className="pill pill-red" style={{ marginBottom: '20px' }}>{error}</div>}
 
             {step === 'cedula' && (
-                <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <div className="card-icon-wrap icon-gold" style={{ marginBottom: '20px' }}>
+                        <i className="fas fa-id-card"></i>
+                    </div>
+                    <h3>Verificación de identidad</h3>
                     <form onSubmit={handleVerifyCedula}>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">
-                                Número de Cédula
-                            </label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Número de Cédula</label>
                             <input
                                 type="text"
                                 value={cedula}
                                 onChange={(e) => setCedula(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Ingrese su número de cédula"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--border)',
+                                    background: 'rgba(0,0,0,0.3)',
+                                    color: '#fff',
+                                    fontSize: '1rem'
+                                }}
+                                placeholder="Ej: 12345678"
                                 required
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+                            style={{
+                                background: 'linear-gradient(135deg, var(--green), var(--green2))',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '12px 24px',
+                                borderRadius: '40px',
+                                fontSize: '1rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                width: '100%',
+                                transition: 'transform 0.2s'
+                            }}
                         >
                             {loading ? 'Verificando...' : 'Verificar Cédula'}
                         </button>
@@ -104,32 +124,40 @@ function VotingPage() {
             )}
 
             {step === 'voting' && (
-                <div>
-                    <div className="text-center mb-6">
-                        <h2 className="text-2xl font-bold">Bienvenido, {voter?.nombre}</h2>
-                        <p className="text-gray-600">Selecciona a tu candidato preferido</p>
+                <>
+                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                        <div className="pill pill-green">Bienvenido, {voter?.nombre}</div>
+                        <p style={{ marginTop: '12px', color: 'var(--muted)' }}>Selecciona a tu candidato preferido</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <div className="cards-grid">
                         {candidates.map((candidate) => (
-                            <div key={candidate.id} className="bg-white rounded-lg shadow-md p-6 text-center">
+                            <div key={candidate.id} className="card" style={{ textAlign: 'center' }}>
                                 <img
                                     src={candidate.foto_url}
                                     alt={candidate.nombre}
-                                    className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+                                    style={{
+                                        width: '120px',
+                                        height: '120px',
+                                        borderRadius: '60px',
+                                        objectFit: 'cover',
+                                        margin: '0 auto 16px',
+                                        border: '2px solid var(--gold)'
+                                    }}
                                     onError={(e) => { e.target.src = 'https://via.placeholder.com/128'; }}
                                 />
-                                <h3 className="text-xl font-semibold mb-4">{candidate.nombre}</h3>
+                                <h3>{candidate.nombre}</h3>
                                 <button
                                     onClick={() => handleVote(candidate.id)}
                                     disabled={loading}
-                                    className="bg-green-500 text-white py-2 px-6 rounded-md hover:bg-green-600 disabled:bg-gray-400"
+                                    className="pill pill-green"
+                                    style={{ marginTop: '20px', cursor: 'pointer', width: '100%' }}
                                 >
-                                    Votar
+                                    {loading ? 'Procesando...' : 'Votar'}
                                 </button>
                             </div>
                         ))}
                     </div>
-                </div>
+                </>
             )}
         </div>
     );

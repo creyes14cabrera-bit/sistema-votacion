@@ -152,6 +152,14 @@ app.get('/api/admin/stats', authenticateAdmin, (req, res) => {
         });
     });
 });
+// Ruta para obtener todos los votantes (admin)
+app.get('/api/admin/voters', authenticateAdmin, (req, res) => {
+    const query = 'SELECT id, cedula, nombre, has_voted, voted_at FROM voters ORDER BY id';
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
 
 // Iniciar el servidor
 app.listen(port, () => {

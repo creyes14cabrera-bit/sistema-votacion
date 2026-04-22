@@ -6,6 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 function AdminDashboard() {
     const [stats, setStats] = useState(null);
+    const [voters, setVoters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -17,6 +18,7 @@ function AdminDashboard() {
             return;
         }
         fetchStats(token);
+        fetchVoters(token);
     }, [navigate]);
 
     const fetchStats = async (token) => {
@@ -25,15 +27,30 @@ function AdminDashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStats(response.data);
-        } catch (error) {
-            if (error.response && error.response.status === 401) {
-                localStorage.removeItem('adminToken');
-                navigate('/admin');
-            } else {
-                setError('Error al cargar las estadísticas');
-            }
+        } catch (err) {
+            handleAuthError(err);
+        }
+    };
+
+    const fetchVoters = async (token) => {
+        try {
+            const response = await axios.get(`${API_URL}/admin/voters`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setVoters(response.data);
+        } catch (err) {
+            handleAuthError(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAuthError = (err) => {
+        if (err.response && err.response.status === 401) {
+            localStorage.removeItem('adminToken');
+            navigate('/admin');
+        } else {
+            setError('Error al cargar los datos');
         }
     };
 
@@ -42,76 +59,89 @@ function AdminDashboard() {
         navigate('/admin');
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="text-xl">Cargando estadísticas...</div>
-            </div>
-        );
-    }
+    if (loading) return <div className="section">Cargando estadísticas...</div>;
 
     return (
-        <div className="container mx-auto p-4">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Panel de Administrador</h1>
-                <button
-                    onClick={handleLogout}
-                    className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
-                >
-                    Cerrar Sesión
+        <div className="section">
+            <div className="section-header">
+                <div className="section-tag">Panel de Control</div>
+                <h1 className="section-title">Gestión de la <em>Votación</em></h1>
+                <button onClick={handleLogout} className="pill pill-red" style={{ marginTop: '20px', cursor: 'pointer' }}>
+                    <i className="fas fa-sign-out-alt"></i> Cerrar Sesión
                 </button>
             </div>
 
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {error}
-                </div>
-            )}
+            {error && <div className="pill pill-red">{error}</div>}
 
             {stats && (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <h3 className="text-gray-500 text-sm">Total de Votantes</h3>
-                            <p className="text-2xl font-bold">{stats.total_voters}</p>
+                    <div className="stats-bar">
+                        <div className="stat">
+                            <span className="stat-num">{stats.total_voters}</span>
+                            <span className="stat-label">Total Votantes</span>
                         </div>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <h3 className="text-gray-500 text-sm">Votos Emitidos</h3>
-                            <p className="text-2xl font-bold">{stats.voted_count}</p>
+                        <div className="stat">
+                            <span className="stat-num">{stats.voted_count}</span>
+                            <span className="stat-label">Votos Emitidos</span>
                         </div>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <h3 className="text-gray-500 text-sm">Votos Pendientes</h3>
-                            <p className="text-2xl font-bold">{stats.pending_voters}</p>
+                        <div className="stat">
+                            <span className="stat-num">{stats.pending_voters}</span>
+                            <span className="stat-label">Pendientes</span>
                         </div>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <h3 className="text-gray-500 text-sm">Participación</h3>
-                            <p className="text-2xl font-bold">{stats.participation_percentage}%</p>
+                        <div className="stat">
+                            <span className="stat-num">{stats.participation_percentage}%</span>
+                            <span className="stat-label">Participación</span>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <h2 className="text-xl font-bold mb-4">Resultados por Candidato</h2>
-                        <div className="space-y-4">
-                            {stats.candidates.map((candidate) => (
-                                <div key={candidate.id} className="border-b pb-4">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="font-semibold">{candidate.nombre}</span>
-                                        <span className="text-gray-600">{candidate.votes} votos</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-4">
-                                        <div
-                                            className="bg-blue-500 h-4 rounded-full"
-                                            style={{
-                                                width: `${stats.voted_count > 0 ? (candidate.votes / stats.voted_count) * 100 : 0}%`
-                                            }}
-                                        ></div>
-                                    </div>
+                    <div className="cards-grid" style={{ marginBottom: '48px' }}>
+                        {stats.candidates.map(c => (
+                            <div className="card" key={c.id}>
+                                <div className="card-icon-wrap icon-gold">
+                                    <i className="fas fa-user-check"></i>
                                 </div>
-                            ))}
-                        </div>
+                                <h3>{c.nombre}</h3>
+                                <p>{c.votes} votos</p>
+                                <div className="card-badge">{((c.votes / stats.voted_count) * 100 || 0).toFixed(1)}%</div>
+                            </div>
+                        ))}
                     </div>
                 </>
             )}
+
+            <div className="section-header">
+                <div className="section-tag">Detalle de votantes</div>
+                <h2 className="section-title">Estado de <em>participación</em></h2>
+            </div>
+
+            <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                    <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)' }}>
+                            <th style={{ padding: '16px', textAlign: 'left' }}>Cédula</th>
+                            <th style={{ padding: '16px', textAlign: 'left' }}>Nombre</th>
+                            <th style={{ padding: '16px', textAlign: 'left' }}>Estado</th>
+                            <th style={{ padding: '16px', textAlign: 'left' }}>Fecha de voto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {voters.map(v => (
+                            <tr key={v.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                <td style={{ padding: '12px 16px' }}>{v.cedula}</td>
+                                <td style={{ padding: '12px 16px' }}>{v.nombre}</td>
+                                <td style={{ padding: '12px 16px' }}>
+                                    {v.has_voted ? (
+                                        <span className="pill pill-green" style={{ fontSize: '0.75rem' }}>✔️ Votó</span>
+                                    ) : (
+                                        <span className="pill pill-orange" style={{ fontSize: '0.75rem' }}>⏳ Pendiente</span>
+                                    )}
+                                </td>
+                                <td style={{ padding: '12px 16px' }}>{v.voted_at ? new Date(v.voted_at).toLocaleString() : '—'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
