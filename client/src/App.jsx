@@ -32,7 +32,7 @@ function App() {
         </Routes>
       </main>
       <footer>
-        <img src="/LOGO.png" alt="Alcaldía de Soledad" />
+        <img src="/logo-Alcaldia.png" alt="Alcaldía de Soledad" />
         <div className="motto">“Compromiso con la participación ciudadana”</div>
         <p>© 2026 Alcaldía de Soledad - Sistema de Votación Institucional</p>
         <hr />

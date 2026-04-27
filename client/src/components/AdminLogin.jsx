@@ -16,18 +16,12 @@ function AdminLogin() {
         setLoading(true);
         setError('');
         try {
-            const response = await axios.post(`${API_URL}/admin/login`, {
-                username,
-                password
-            });
+            const response = await axios.post(`${API_URL}/admin/login`, { username, password });
             localStorage.setItem('adminToken', response.data.token);
             navigate('/admin/dashboard');
         } catch (error) {
-            if (error.response) {
-                setError(error.response.data.error);
-            } else {
-                setError('Error de conexión con el servidor');
-            }
+            const msg = error.response?.data?.error || 'Error de conexión';
+            setError(msg);
         } finally {
             setLoading(false);
         }

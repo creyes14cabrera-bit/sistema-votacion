@@ -9,6 +9,8 @@ function AdminDashboard() {
     const [voters, setVoters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [uploadMessage, setUploadMessage] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -57,6 +59,38 @@ function AdminDashboard() {
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         navigate('/admin');
+    };
+
+    // --- Nueva función para importar Excel ---
+    const handleFileUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        setUploading(true);
+        setUploadMessage(null);
+        const token = localStorage.getItem('adminToken');
+
+        try {
+            const response = await axios.post(`${API_URL}/admin/import-voters`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setUploadMessage({ type: 'success', text: response.data.message });
+            // Refrescar datos después de importar
+            fetchStats(token);
+            fetchVoters(token);
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || 'Error al subir el archivo.';
+            setUploadMessage({ type: 'error', text: errorMsg });
+        } finally {
+            setUploading(false);
+            // Limpiar el input file
+            event.target.value = null;
+        }
     };
 
     if (loading) return <div className="section">Cargando estadísticas...</div>;
@@ -108,6 +142,33 @@ function AdminDashboard() {
                     </div>
                 </>
             )}
+
+            {/* SECCIÓN DE IMPORTAR VOTANTES */}
+            <div className="section-header" style={{ marginTop: '40px' }}>
+                <div className="section-tag">Herramientas</div>
+                <h2 className="section-title">Importar <em>Votantes</em> desde Excel</h2>
+            </div>
+            <div className="card">
+                <div className="card-icon-wrap icon-gold">
+                    <i className="fas fa-file-excel"></i>
+                </div>
+                <p style={{ marginBottom: '16px' }}>
+                    Selecciona un archivo Excel (.xlsx o .xls) con las columnas <strong>cedula</strong> y <strong>nombre</strong>.
+                </p>
+                <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    style={{ marginBottom: '16px', display: 'block' }}
+                />
+                {uploading && <div className="pill pill-gold">Subiendo y procesando archivo...</div>}
+                {uploadMessage && (
+                    <div className={`pill ${uploadMessage.type === 'success' ? 'pill-green' : 'pill-red'}`}>
+                        {uploadMessage.text}
+                    </div>
+                )}
+            </div>
 
             <div className="section-header">
                 <div className="section-tag">Detalle de votantes</div>

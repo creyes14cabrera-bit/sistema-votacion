@@ -12,37 +12,31 @@ function VotingPage() {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (step === 'voting') {
-            fetchCandidates();
-        }
+        if (step === 'voting') fetchCandidates();
     }, [step]);
 
     const fetchCandidates = async () => {
         try {
-            const response = await axios.get(`${API_URL}/candidates`);
-            setCandidates(response.data);
-        } catch (error) {
-            console.error('Error fetching candidates:', error);
-            setError('Error al cargar los candidatos');
+            const res = await axios.get(`${API_URL}/candidates`);
+            setCandidates(res.data);
+        } catch (err) {
+            setError('Error al cargar candidatos');
         }
     };
 
-    const handleVerifyCedula = async (e) => {
+    const handleVerify = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
         try {
-            const response = await axios.post(`${API_URL}/voters/verify`, { cedula });
-            if (response.data.success) {
-                setVoter(response.data.voter);
+            const res = await axios.post(`${API_URL}/voters/verify`, { cedula });
+            if (res.data.success) {
+                setVoter(res.data.voter);
                 setStep('voting');
             }
-        } catch (error) {
-            if (error.response) {
-                setError(error.response.data.error);
-            } else {
-                setError('Error de conexión con el servidor');
-            }
+        } catch (err) {
+            const msg = err.response?.data?.error || 'Error de conexión';
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -51,15 +45,12 @@ function VotingPage() {
     const handleVote = async (candidateId) => {
         setLoading(true);
         try {
-            await axios.post(`${API_URL}/votes`, {
-                voter_id: voter.id,
-                candidate_id: candidateId
-            });
+            await axios.post(`${API_URL}/votes`, { voter_id: voter.id, candidate_id: candidateId });
             alert('¡Voto registrado exitosamente!');
             setStep('cedula');
             setCedula('');
             setVoter(null);
-        } catch (error) {
+        } catch (err) {
             setError('Error al registrar el voto');
         } finally {
             setLoading(false);
@@ -77,11 +68,9 @@ function VotingPage() {
 
             {step === 'cedula' && (
                 <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    <div className="card-icon-wrap icon-gold" style={{ marginBottom: '20px' }}>
-                        <i className="fas fa-id-card"></i>
-                    </div>
+                    <div className="card-icon-wrap icon-gold"><i className="fas fa-id-card"></i></div>
                     <h3>Verificación de identidad</h3>
-                    <form onSubmit={handleVerifyCedula}>
+                    <form onSubmit={handleVerify}>
                         <div style={{ marginBottom: '20px' }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Número de Cédula</label>
                             <input
@@ -94,10 +83,8 @@ function VotingPage() {
                                     borderRadius: '12px',
                                     border: '1px solid var(--border)',
                                     background: 'rgba(0,0,0,0.3)',
-                                    color: '#fff',
-                                    fontSize: '1rem'
+                                    color: '#fff'
                                 }}
-                                placeholder="Ej: 12345678"
                                 required
                             />
                         </div>
@@ -110,11 +97,9 @@ function VotingPage() {
                                 border: 'none',
                                 padding: '12px 24px',
                                 borderRadius: '40px',
-                                fontSize: '1rem',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
                                 width: '100%',
-                                transition: 'transform 0.2s'
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
                             }}
                         >
                             {loading ? 'Verificando...' : 'Verificar Cédula'}
@@ -130,11 +115,11 @@ function VotingPage() {
                         <p style={{ marginTop: '12px', color: 'var(--muted)' }}>Selecciona a tu candidato preferido</p>
                     </div>
                     <div className="cards-grid">
-                        {candidates.map((candidate) => (
-                            <div key={candidate.id} className="card" style={{ textAlign: 'center' }}>
+                        {candidates.map(c => (
+                            <div key={c.id} className="card" style={{ textAlign: 'center' }}>
                                 <img
-                                    src={candidate.foto_url}
-                                    alt={candidate.nombre}
+                                    src={c.foto_url}
+                                    alt={c.nombre}
                                     style={{
                                         width: '120px',
                                         height: '120px',
@@ -145,9 +130,9 @@ function VotingPage() {
                                     }}
                                     onError={(e) => { e.target.src = 'https://via.placeholder.com/128'; }}
                                 />
-                                <h3>{candidate.nombre}</h3>
+                                <h3>{c.nombre}</h3>
                                 <button
-                                    onClick={() => handleVote(candidate.id)}
+                                    onClick={() => handleVote(c.id)}
                                     disabled={loading}
                                     className="pill pill-green"
                                     style={{ marginTop: '20px', cursor: 'pointer', width: '100%' }}
