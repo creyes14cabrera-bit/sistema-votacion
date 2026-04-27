@@ -1,3 +1,7 @@
+const multer = require('multer');
+const XLSX = require('xlsx');
+const upload = multer({ storage: multer.memoryStorage() });
+
 // server.js
 const express = require('express');
 const mysql = require('mysql2');
@@ -152,12 +156,58 @@ app.get('/api/admin/stats', authenticateAdmin, (req, res) => {
         });
     });
 });
+
 // Ruta para obtener todos los votantes (admin)
 app.get('/api/admin/voters', authenticateAdmin, (req, res) => {
     const query = 'SELECT id, cedula, nombre, has_voted, voted_at FROM voters ORDER BY id';
     db.query(query, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
+    });
+});
+
+// --- NUEVA RUTA: Importar votantes desde Excel (solo admin) ---
+app.post('/api/admin/import-voters', authenticateAdmin, upload.single('file'), async (req, res) => {
+    // 1. Validar que se haya subido un archivo
+    if (!req.file) {
+        return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
+    }
+
+    // 2. Leer y parsear el archivo Excel
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    // 3. Validar que el archivo tenga datos
+    if (data.length === 0) {
+        return res.status(400).json({ error: 'El archivo Excel está vacío.' });
+    }
+
+    // 4. Validar que las columnas necesarias existan y mapear datos
+    //    Esperamos columnas 'cedula' y 'nombre'. Ajusta los nombres si son diferentes.
+    const votersToInsert = [];
+    for (const row of data) {
+        if (row.cedula && row.nombre) {
+            votersToInsert.push([row.cedula, row.nombre]);
+        } else {
+            console.warn('Fila omitida por falta de cédula o nombre:', row);
+        }
+    }
+
+    if (votersToInsert.length === 0) {
+        return res.status(400).json({ error: 'No se encontraron datos válidos en el archivo. Asegúrate de que las columnas se llamen "cedula" y "nombre".' });
+    }
+
+    // 5. Insertar los votantes en la base de datos de forma masiva (bulk insert)
+    const query = 'INSERT IGNORE INTO voters (cedula, nombre) VALUES ?';
+    //    'INSERT IGNORE' evita que la consulta falle si se intenta insertar una cédula duplicada.
+    db.query(query, [votersToInsert], (err, result) => {
+        if (err) {
+            console.error('Error al insertar votantes:', err);
+            return res.status(500).json({ error: 'Error al guardar los votantes en la base de datos.' });
+        }
+        res.json({ message: `Importación completada. ${result.affectedRows} votantes nuevos agregados.` });
     });
 });
 
