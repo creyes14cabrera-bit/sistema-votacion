@@ -58,18 +58,15 @@ app.post('/api/admin/login', async (req, res) => {
         return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
     }
 
-    // Buscar al admin en la base de datos
     const query = 'SELECT * FROM admins WHERE username = ?';
     db.query(query, [username], async (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         if (results.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
 
         const admin = results[0];
-        // Comparar la contraseña ingresada con la almacenada (encriptada)
         const validPassword = await bcrypt.compare(password, admin.password);
         if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas' });
 
-        // Generar un token JWT
         const token = jwt.sign({ id: admin.id, username: admin.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ message: 'Login exitoso', token });
     });
@@ -104,18 +101,15 @@ app.post('/api/votes', (req, res) => {
         return res.status(400).json({ error: 'ID de votante y candidato son requeridos' });
     }
 
-    // Iniciar una transacción para asegurar que ambas operaciones se completen
     db.beginTransaction(err => {
         if (err) return res.status(500).json({ error: err.message });
 
-        // 1. Incrementar el contador de votos del candidato
         const updateCandidateQuery = 'UPDATE candidates SET votes = votes + 1 WHERE id = ?';
         db.query(updateCandidateQuery, [candidate_id], (err) => {
             if (err) {
                 return db.rollback(() => res.status(500).json({ error: err.message }));
             }
 
-            // 2. Marcar al votante como que ya votó
             const updateVoterQuery = 'UPDATE voters SET has_voted = TRUE, voted_at = NOW() WHERE id = ?';
             db.query(updateVoterQuery, [voter_id], (err) => {
                 if (err) {
@@ -132,11 +126,9 @@ app.post('/api/votes', (req, res) => {
     });
 });
 
-// 5. Ruta para obtener las estadísticas (protegida para el admin)
+// 5. Ruta para obtener las estadísticas (protegida)
 app.get('/api/admin/stats', authenticateAdmin, (req, res) => {
-    // Obtener el total de votantes que han votado
     const totalVotersQuery = 'SELECT COUNT(*) as total_voters, SUM(has_voted) as voted FROM voters';
-    // Obtener los votos por candidato
     const candidatesVotesQuery = 'SELECT id, nombre, votes FROM candidates';
 
     db.query(totalVotersQuery, (err, totalResults) => {
@@ -168,24 +160,19 @@ app.get('/api/admin/voters', authenticateAdmin, (req, res) => {
 
 // --- NUEVA RUTA: Importar votantes desde Excel (solo admin) ---
 app.post('/api/admin/import-voters', authenticateAdmin, upload.single('file'), async (req, res) => {
-    // 1. Validar que se haya subido un archivo
     if (!req.file) {
         return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
     }
 
-    // 2. Leer y parsear el archivo Excel
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    // 3. Validar que el archivo tenga datos
     if (data.length === 0) {
         return res.status(400).json({ error: 'El archivo Excel está vacío.' });
     }
 
-    // 4. Validar que las columnas necesarias existan y mapear datos
-    //    Esperamos columnas 'cedula' y 'nombre'. Ajusta los nombres si son diferentes.
     const votersToInsert = [];
     for (const row of data) {
         if (row.cedula && row.nombre) {
@@ -196,12 +183,10 @@ app.post('/api/admin/import-voters', authenticateAdmin, upload.single('file'), a
     }
 
     if (votersToInsert.length === 0) {
-        return res.status(400).json({ error: 'No se encontraron datos válidos en el archivo. Asegúrate de que las columnas se llamen "cedula" y "nombre".' });
+        return res.status(400).json({ error: 'No se encontraron datos válidos. Asegúrate de que las columnas se llamen "cedula" y "nombre".' });
     }
 
-    // 5. Insertar los votantes en la base de datos de forma masiva (bulk insert)
     const query = 'INSERT IGNORE INTO voters (cedula, nombre) VALUES ?';
-    //    'INSERT IGNORE' evita que la consulta falle si se intenta insertar una cédula duplicada.
     db.query(query, [votersToInsert], (err, result) => {
         if (err) {
             console.error('Error al insertar votantes:', err);
